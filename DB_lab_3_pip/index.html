@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <!--<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">-->
+    <!--<link href="./styles.css" rel="stylesheet">-->
+    <style>
+        html{
+            font-family: sans-serif;
+            font-size: 15px;
+        }
+
+        #filter-wrapper.active{
+            visibility: visible;
+        }
+        #filter-wrapper{
+            visibility: hidden;
+            display: inline-block;
+        }
+
+        #db-data{
+            border-collapse: collapse;
+            width: 100%;
+            /*table-layout: fixed;*/
+        }
+
+        #db-data th,
+        #db-data td{
+            border: 1px solid black;
+        }
+
+        .action{
+            width: 0;
+            text-align: center;
+        }
+
+        #db-data th[style*="--lable:"]{
+            font-size: 0;
+        }
+        #db-data th[style*="--lable:"]::before{
+            content: var(--lable);
+            font-size: initial;
+        }
+
+        .table-controll{
+            display: flex;
+        }
+
+        .table-controll .max-items{
+            margin-left: auto;
+        }
+
+        .table-controll .page input{
+            width: 3em;
+            text-align: center;
+        }
+
+        .modal{
+
+        }
+
+        .modal::backdrop {
+            background: rgb(0 0 0 / 0.1);
+        }
+
+        #settings-modal table,
+        #modal table{
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        #settings-modal table th,
+        #settings-modal table td,
+        #modal table th,
+        #modal table td{
+            border: 1px solid black;
+        }
+    </style>
+    <title>Hello World!</title>
+    <template id="select-default-value">
+      <option value="" selected disabled hidden>Choose value</option>
+    </template>
+    <template id="table-actions">
+      <td><button class="delete">-</button></td>
+    </template>
+  </head>
+  <body>
+    <h1>PostgreSQL</h1>
+    <h3>app 3</h3>
+    <span>python (universal UI - pywebview)</span>
+
+    <hr>
+    <button id="settings-btn">&#9881;</button>
+    
+    <button id="filter-btn">Y</button>
+
+    <div id="filter-wrapper">
+      <input id="filter-input" placeholder="serch by name..." type="text">
+      <button id="filter-apply">&#10004;</button>
+    </div>
+    <hr>
+
+    <table class="" id="db-data">
+      <style>
+      </style>
+    </table>
+
+    <div class="table-controll">
+      <div class="page">
+        <button id="page-dec">&lt;</button>
+        <input id="page-field" type="text" value="1" readonly>
+        <button id="page-inc">&gt;</button>
+      </div>
+      <div class="max-items">
+        <span>max items per page:</span>
+        <select id="max-item-select">
+          <!--<option value="" selected disabled hidden>Choose here</option>-->
+          <option value="1">1</option>
+          <option value="5" selected>5</option>
+          <option value="10">10</option>
+          <option value="50">50</option>
+        </select>
+        <button id="table-add">+</button>
+        <button id="table-refrash">&#8635;</button>
+      </div>
+    </div>
+
+    <dialog class="modal" id="modal">
+      <h1>insert</h1>
+      <table>
+        <thead>
+          <th>name</th>
+          <th>author_id</th>
+          <th>publisher_id</th>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input class="input" id="insert-book-name" type="text"></td>
+            <td><select class="input" id="insert-author-id"></select></td>
+            <td><select class="input" id="insert-publisher-id"></select></td>
+          </tr>
+        </tbody>
+      </table>
+      <div>
+        <button id="modal-insert">insert</button>
+        <button id="modal-close">close</button>
+      </div>
+    </dialog>
+
+    <dialog class="modal" id="settings-modal">
+      <h1>Settings</h1>
+      <table>
+
+      </table>
+      <span>empty lables doenst applies (used default name)</span>
+      <hr>
+      <button id="settings-close-btn">close</button>
+    </dialog>
+
+    <dialog id="alert-modal">
+      <h1>alert</h1>
+      <span id="alert-message"></span><br>
+      <button id="alert-close">ok</button>
+    </dialog>
+
+
+    <script type="text/javascript">
+
+        let init = (async function() {  
+
+        var currentPage = 1;
+        var maxItemCount = 5;
+
+        var searchFilter = null;
+
+        const tableColumnLables = {name:"имя",}
+        const hiddenColumn = ["id"];
+
+        const settingsModal = document.getElementById("settings-modal");
+        const settingsBtn = document.getElementById("settings-btn");
+        const settingsCloseBtn = document.getElementById("settings-close-btn");
+
+        settingsBtn.addEventListener('click',()=>{settingsModal.showModal();});
+        settingsCloseBtn.addEventListener('click',()=>{settingsModal.close();});
+
+        const dbData = document.getElementById("db-data");
+        const tableActions = document.getElementById("table-actions");
+
+        await (async function() {  
+            const settingsTable = settingsModal.querySelector("table");
+
+            let style = dbData.querySelector("style");
+            let css = "";
+
+            let data = await pywebview.api.retrievData("books",searchFilter,maxItemCount,((currentPage - 1) * maxItemCount))
+            //console.log(data);
+            let fragment = document.createDocumentFragment();
+            let settingsFragment = document.createDocumentFragment();
+
+            let head = document.createElement("thead");
+
+            let settingsHead = document.createElement("thead");
+            let settingsBody = document.createElement("tbody");
+            let settingsVisibility = document.createElement("tr");
+            let settingsLable = document.createElement("tr"); 
+            (function(){
+                let th = document.createElement("th");
+                th.innerText = "column name:";
+                settingsHead.append(th);
+
+                th = document.createElement("th");
+                th.innerText = "hiden:";
+                settingsVisibility.append(th);
+
+                th = document.createElement("th");
+                th.innerText = "lable:";
+                settingsLable.append(th);
+            })();    
+
+            let i = 1;
+            data.fields.forEach(element => {
+                let th = document.createElement("th")
+                th.innerText = element.name;
+                const header = th;
+                head.append(th);
+                css += `#db-data.${element.name} tr td:nth-child(${i}),#db-data.${element.name} thead th:nth-child(${i}){display:none;}\n`;
+                i++;
+                //====
+                th = document.createElement("th");
+                th.innerText = element.name;
+                settingsHead.append(th);
+                //====
+                th = document.createElement("td");
+                let check = document.createElement('input');
+                check.type = "checkbox";
+                const name = element.name;
+                check.addEventListener("change",(e)=>{
+                    if (e.target.checked) {
+                        dbData.classList.add(name);
+                    } else {
+                        dbData.classList.remove(name);
+                    }
+                });
+                if (hiddenColumn.includes(name)){
+                    check.checked = true;
+                    dbData.classList.add(name);
+                }
+                th.append(check)
+                settingsVisibility.append(th);
+                //====
+                th = document.createElement("td");
+                let input = document.createElement('input');
+                input.type = "text";
+                input.addEventListener("change",(e)=>{
+                    let lable = e.target.value;
+                    if (lable != "") {
+                        header.style.setProperty("--lable",`"${lable}"`);
+                    } else {
+                        header.style.removeProperty("--lable");
+                    }
+                });
+                if (name in tableColumnLables) {
+                    let value = tableColumnLables[name];
+                    input.value = value;
+                    header.style.setProperty("--lable",`'${value}'`);
+                }
+                th.append(input);
+                settingsLable.append(th);
+            });
+
+            let actions = document.createElement("th");
+            actions.innerText = "actions";
+            actions.classList.add("action");
+            head.append(actions);
+
+            fragment.append(head);
+            settingsFragment.append(settingsHead);
+            settingsBody.append(settingsVisibility);
+            settingsBody.append(settingsLable);
+            settingsFragment.append(settingsBody);
+            settingsTable.append(settingsFragment);
+
+            let body = document.createElement("tbody");
+            body.append(createTBodyFragment(data));
+            fragment.append(body);
+            style.appendChild(document.createTextNode(css));
+            dbData.append(fragment);
+        })();  
+
+        const dbDataBody = dbData.querySelector("tbody");
+
+        function createTBodyFragment(data){
+            let fragment = document.createDocumentFragment();
+            data.rows.forEach(element => {
+                let row = document.createElement("tr");
+                Object.values(element).forEach(val => {
+                    let td = document.createElement("td");
+                    td.innerText = val;
+                    row.append(td);
+                });
+                let td = tableActions.content.cloneNode(true);
+                let removeBtn = td.querySelector(".delete");
+                const id = element.id;
+                removeBtn.addEventListener("click",async ()=>{
+                    console.log(id);
+                    await pywebview.api.deleteData("books",id);
+                    updateTable();
+                });
+                td.querySelector("td").classList.add("action");//  <========
+                row.append(td);
+                fragment.append(row);
+            });
+            return fragment;
+        }
+
+        async function updateTable(){
+            let data = await pywebview.api.retrievData("books",searchFilter,maxItemCount,((currentPage - 1) * maxItemCount))
+            while (dbDataBody.lastElementChild) {
+                dbDataBody.removeChild(dbDataBody.lastElementChild);
+            }
+            dbDataBody.append(createTBodyFragment(data));
+        }
+
+        const refrashBtn = document.getElementById("table-refrash");
+        refrashBtn.addEventListener("click",()=>{
+            updateTable();
+        });
+
+        const addBtn = document.getElementById("table-add");
+        const modal = document.getElementById("modal");
+        const modalClose = document.getElementById("modal-close");
+        const modalInsert = document.getElementById("modal-insert");
+
+        const insertBookName = document.getElementById("insert-book-name");
+        const insertAuthorId = document.getElementById("insert-author-id");
+        const insertPublisherId = document.getElementById("insert-publisher-id");
+
+        const selectDefaultValue = document.getElementById("select-default-value");
+        addBtn.addEventListener("click",async()=>{
+
+            let result = await Promise.all([
+                pywebview.api.retrievData("authors",null,"all"),
+                pywebview.api.retrievData("publishers",null,"all")
+            ]);
+
+            //authors
+            while (insertAuthorId.firstChild)
+                insertAuthorId.removeChild(insertAuthorId.lastChild);
+            insertAuthorId.append(selectDefaultValue.content.cloneNode(true));
+            result[0].rows.forEach(row=>{
+                let option = document.createElement("option");
+                option.value = row.id;
+                option.innerText = row.name;
+                insertAuthorId.append(option);
+            });
+            //publishers
+            while (insertPublisherId.firstChild)
+            insertPublisherId.removeChild(insertPublisherId.lastChild);
+            insertPublisherId.append(selectDefaultValue.content.cloneNode(true));
+            result[1].rows.forEach(row=>{
+                let option = document.createElement("option");
+                option.value = row.id;
+                option.innerText = row.name;
+                insertPublisherId.append(option);
+            });
+
+            modal.showModal();
+
+        });
+        modalClose.addEventListener("click",()=>{
+            modal.close();
+        });
+        const inputs = modal.querySelectorAll(".input");
+        modalInsert.addEventListener('click',()=>{
+            let values = [];
+            let isValid = true;
+            for (let input of inputs) {
+                values.push(input.value);
+                if (input.value === '') {
+                    isValid = false;
+                    break;
+                }
+            }
+            if (isValid) {
+                //fix here
+                values[0] = `'${values[0]}'`;
+                //
+                (async function(){
+                    await pywebview.api.insertData("books",values.join());
+                    modal.close();
+                    updateTable();
+                })();
+            } else {
+                iAlert("invalid input data");
+            }
+        });
+
+        const pageField = document.getElementById("page-field");
+        const pageInc = document.getElementById("page-inc");
+        const pageDec = document.getElementById("page-dec");
+        pageInc.addEventListener("click",()=>{
+            currentPage++;
+            pageField.value = currentPage;
+            updateTable()
+        });
+        pageDec.addEventListener("click",()=>{
+            if (currentPage > 1){currentPage--;}
+            pageField.value = currentPage;
+            updateTable()
+        });
+
+        //===============
+
+        const maxItemSelect = document.getElementById("max-item-select");
+        maxItemSelect.addEventListener("change",()=>{
+            maxItemCount = parseInt(maxItemSelect.value);
+            updateTable()
+        })
+
+        const alertModal = document.getElementById("alert-modal");
+        const msg = document.getElementById("alert-message");
+        const alertClose = document.getElementById("alert-close");
+        alertClose.addEventListener('click',()=>{alertModal.close();});
+        function iAlert(message) {
+            msg.innerText = message;
+            alertModal.showModal();
+        }
+
+        const filterInput = document.getElementById("filter-input");
+        const filterWrapper = document.getElementById("filter-wrapper");
+        const filterBtn = document.getElementById("filter-btn");
+        const filterApply = document.getElementById("filter-apply");
+        filterBtn.addEventListener("click",()=>{
+            if (!filterWrapper.classList.toggle("active")) {
+                //hidden
+                searchFilter = null;
+                filterInput.value = null;
+                updateTable();
+            }
+        });
+        filterApply.addEventListener("click",()=>{
+            searchFilter = `%${filterInput.value}%`;
+            //console.log(searchFilter);
+            updateTable();
+        });
+
+        })
+
+        setTimeout(init, 500);
+
+    </script>
+  </body>
+</html>

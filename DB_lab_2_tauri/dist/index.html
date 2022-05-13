@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+    <link href="./styles.css" rel="stylesheet">
+    <title>Hello World!</title>
+  </head>
+  <body>
+    <h1>PostgreSQL</h1>
+    <h3>app 2</h3>
+    <span>Rust (universal UI - tauri)</span>
+
+    <hr>
+    <button id="settings-btn">&#9881;</button>
+    
+    <button id="filter-btn">Y</button>
+
+    <div id="filter-wrapper">
+      <input id="filter-input" placeholder="serch by name..." type="text">
+      <button id="filter-apply">&#10004;</button>
+    </div>
+    <hr>
+
+    <table class="" id="db-data">
+      <style>
+      </style>
+    </table>
+
+    <div class="table-controll">
+      <div class="page">
+        <button id="page-dec">&lt;</button>
+        <input id="page-field" type="text" value="1" readonly>
+        <button id="page-inc">&gt;</button>
+      </div>
+      <div class="max-items">
+        <span>max items per page:</span>
+        <select id="max-item-select">
+          <!--<option value="" selected disabled hidden>Choose here</option>-->
+          <option value="1">1</option>
+          <option value="5" selected>5</option>
+          <option value="10">10</option>
+          <option value="50">50</option>
+        </select>
+        <button id="table-add">+</button>
+        <button id="table-refrash">&#8635;</button>
+      </div>
+    </div>
+
+    <dialog class="modal" id="modal">
+      <h1>insert</h1>
+      <table>
+        <thead>
+          <th>name</th>
+          <th>author_id</th>
+          <th>publisher_id</th>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input class="input" id="insert-book-name" type="text"></td>
+            <td><select class="input" id="insert-author-id"></select></td>
+            <td><select class="input" id="insert-publisher-id"></select></td>
+          </tr>
+        </tbody>
+      </table>
+      <div>
+        <button id="modal-insert">insert</button>
+        <button id="modal-close">close</button>
+      </div>
+    </dialog>
+
+    <dialog class="modal" id="settings-modal">
+      <h1>Settings</h1>
+      <table>
+
+      </table>
+      <span>empty lables doenst applies (used default name)</span>
+      <hr>
+      <button id="settings-close-btn">close</button>
+    </dialog>
+
+    <dialog id="alert-modal">
+      <h1>alert</h1>
+      <span id="alert-message"></span><br>
+      <button id="alert-close">ok</button>
+    </dialog>
+
+    <!-- You can also require other files to run in this process -->
+    <script src="./renderer.js"></script>
+  </body>
+</html>

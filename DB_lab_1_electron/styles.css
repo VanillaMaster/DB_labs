@@ -1,0 +1,74 @@
+/* styles.css */
+
+/* Add styles here to customize the appearance of your app */
+
+html{
+    font-family: sans-serif;
+    font-size: 15px;
+}
+
+#filter-wrapper.active{
+    visibility: visible;
+}
+#filter-wrapper{
+    visibility: hidden;
+    display: inline-block;
+}
+
+#db-data{
+    border-collapse: collapse;
+    width: 100%;
+    /*table-layout: fixed;*/
+}
+
+#db-data th,
+#db-data td{
+    border: 1px solid black;
+}
+
+.action{
+    width: 0;
+    text-align: center;
+}
+
+#db-data th[style*="--lable:"]{
+    font-size: 0;
+}
+#db-data th[style*="--lable:"]::before{
+    content: var(--lable);
+    font-size: initial;
+}
+
+.table-controll{
+    display: flex;
+}
+
+.table-controll .max-items{
+    margin-left: auto;
+}
+
+.table-controll .page input{
+    width: 3em;
+    text-align: center;
+}
+
+.modal{
+
+}
+
+.modal::backdrop {
+    background: rgb(0 0 0 / 0.1);
+}
+
+#settings-modal table,
+#modal table{
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#settings-modal table th,
+#settings-modal table td,
+#modal table th,
+#modal table td{
+    border: 1px solid black;
+}
